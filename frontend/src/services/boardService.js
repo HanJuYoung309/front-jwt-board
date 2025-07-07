@@ -23,16 +23,22 @@ export const createBoard = async (title, content) => {
     }
 };
 
-export const getBoards = async (page = 0, size = 10, sort = 'createdAt,desc') => {
+export const getBoards = async (page = 0, size = 10, sort = 'createdAt,desc', keyword = '') => {
     try {
-        const response = await axios.get(`${API_URL}?page=${page}&size=${size}&sort=${sort}`, getConfig());
-        return response.data;
+        let url = `${API_URL}?page=${page}&size=${size}&sort=${sort}`;
+
+        // keyword가 존재하고 비어있지 않다면 URL에 추가
+        if (keyword && keyword.trim() !== '') {
+            url += `&keyword=${encodeURIComponent(keyword.trim())}`; // URL 인코딩 적용
+        }
+
+        const response = await axios.get(url, getConfig());
+        return response.data; // 백엔드에서 Page<BoardResponse> 형태로 데이터가 반환될 것으로 예상
     } catch (error) {
-        console.error('Get boards failed:', error);
+        console.error('게시글 조회 실패:', error);
         throw error;
     }
 };
-
 export const getBoardById = async (id) => {
     try {
         const response = await axios.get(`${API_URL}/${id}`, getConfig());
@@ -62,3 +68,4 @@ export const deleteBoard = async (id) => {
         throw error;
     }
 };
+

@@ -1,7 +1,8 @@
 // src/pages/BoardListPage.js
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getBoards } from '../services/boardService';
+import { getBoards } from '../services/boardService'; 
+import SearchBar from '../components/SearchBar'; // SearchBar 컴포넌트 임포트
 
 function BoardListPage() {
     const [boards, setBoards] = useState([]);
@@ -9,13 +10,16 @@ function BoardListPage() {
     const [error, setError] = useState('');
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
+    const [keyword, setKeyword] = useState(''); // 검색어 상태 추가
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const fetchBoards = async () => {
+  
+  useEffect(() => {
+        const fetchBoards = async () => { // 더 이상 인자로 page, keyword를 받지 않아도 됩니다.
             try {
                 setLoading(true);
-                const response = await getBoards(page);
+                setError(''); // 새로운 fetch 전에 에러 초기화
+                const response = await getBoards(page, 10, 'createdAt,desc', keyword); // 현재 state 값 사용
                 setBoards(response.content);
                 setTotalPages(response.totalPages);
             } catch (err) {
@@ -29,13 +33,21 @@ function BoardListPage() {
                 setLoading(false);
             }
         };
-        fetchBoards();
-    }, [page, navigate]);
 
-    const handlePageChange = (newPage) => {
+        fetchBoards(); // 함수 정의 후 호출
+    }, [page, keyword, navigate]); // 의존성 배열에는 page, keyword, navigate만 유지
+
+ const handlePageChange = (newPage) => {
         if (newPage >= 0 && newPage < totalPages) {
             setPage(newPage);
         }
+    };
+
+
+    // SearchBar 컴포넌트에서 호출될 검색 핸들러
+    const handleSearch = (searchTerm) => {
+        setKeyword(searchTerm); // 검색어 상태 업데이트
+        setPage(0); // 검색 시 첫 페이지로 이동
     };
 
     if (loading) return <div style={loadingStyle}>게시글 로딩 중...</div>;
@@ -44,8 +56,12 @@ function BoardListPage() {
     return (
         <div style={containerStyle}>
             <h2>게시판</h2>
-            <Link to="/boards/write" style={writeButtonStyle}>글쓰기</Link>
-            {boards.length === 0 ? (
+            <div style={topSectionStyle}>
+                <Link to="/boards/write" style={writeButtonStyle}>글쓰기</Link>
+                <SearchBar onSearch={handleSearch} /> {/* 검색창 추가 */}
+            </div>
+            
+            {boards.length === 0 && !loading ? ( // 로딩 중이 아닐 때 게시글이 없으면 메시지 표시
                 <p>게시글이 없습니다.</p>
             ) : (
                 <table style={tableStyle}>
@@ -80,6 +96,7 @@ function BoardListPage() {
     );
 }
 
+// 스타일 정의 (기존 스타일 유지 및 새로운 스타일 추가)
 const containerStyle = {
     maxWidth: '900px',
     margin: '50px auto',
@@ -90,6 +107,13 @@ const containerStyle = {
     backgroundColor: '#f9f9f9',
 };
 
+const topSectionStyle = {
+    display: 'flex',
+    justifyContent: 'space-between', // 글쓰기 버튼과 검색창을 양쪽 끝으로 정렬
+    alignItems: 'center',
+    marginBottom: '20px',
+};
+
 const writeButtonStyle = {
     display: 'inline-block',
     backgroundColor: '#007bff',
@@ -97,7 +121,7 @@ const writeButtonStyle = {
     padding: '8px 15px',
     borderRadius: '5px',
     textDecoration: 'none',
-    marginBottom: '20px',
+    // marginBottom: '20px', // topSectionStyle에서 margin 처리하므로 제거
 };
 
 const tableStyle = {
@@ -122,9 +146,13 @@ const trStyle = {
     transition: 'background-color 0.2s',
 };
 
-trStyle[':hover'] = {
-    backgroundColor: '#f1f1f1',
-};
+// CSS-in-JS에서 가상 선택자 (hover)를 직접 사용하는 것은 제한적입니다.
+// styled-components나 emotion 같은 라이브러리를 사용하거나, 별도의 CSS 파일을 사용하거나,
+// React의 이벤트 핸들러를 이용해 스타일을 동적으로 변경해야 합니다.
+// 여기서는 단순화를 위해 직접적인 :hover 스타일은 제거합니다.
+// trStyle[':hover'] = {
+//     backgroundColor: '#f1f1f1',
+// };
 
 const linkStyle = {
     textDecoration: 'none',
